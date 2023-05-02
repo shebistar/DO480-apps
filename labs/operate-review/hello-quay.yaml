@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-quay
+  labels:
+    app: hello-quay
+    name: hello-quay
+  namespace: operate-review
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-quay
+      name: hello-quay
+  template:
+    metadata:
+      labels:
+        app: hello-quay
+        name: hello-quay
+    spec:
+      containers:
+      - name: hello-quay
+        image: quay.io/redhattraining/do480-hello-app:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hello-quay
+    name: hello-quay
+  name: hello-quay
+  namespace: operate-review
+spec:
+  ports:
+  - port: 8080
+  selector:
+    name: hello-quay
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: hello-quay
+  labels:
+    app: hello-quay
+    name: hello-quay
+  namespace: operate-review
+spec:
+  host: hello-quay.apps.ocp4.example.com
+  subdomain: ''
+  to:
+    kind: Service
+    name: hello-quay
+    weight: 100
+  port:
+    targetPort: 8080
+  wildcardPolicy: None
