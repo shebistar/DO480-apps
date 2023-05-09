@@ -1,0 +1,24 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Namespace","metadata":{"annotations":{},"name":"etherpad"}}
+    openshift.io/sa.scc.mcs: s0:c27,c14
+    openshift.io/sa.scc.supplemental-groups: 1000730000/10000
+    openshift.io/sa.scc.uid-range: 1000730000/10000
+  creationTimestamp: "2023-05-04T12:59:37Z"
+  labels:
+    kubernetes.io/metadata.name: etherpad
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: v1.24
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: v1.24
+  name: etherpad
+  resourceVersion: "9351469"
+  uid: 96ac142d-80ca-4487-9d30-a5c93ad7af0e
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
