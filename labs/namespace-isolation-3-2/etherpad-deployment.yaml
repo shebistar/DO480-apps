@@ -1,11 +1,9 @@
 ---
-apiVersion: project.openshift.io/v1
-kind: Project
+kind: Namespace
+apiVersion: v1
 metadata:
   name: etherpad
-spec:
-  finalizers:
-  - kubernetes
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -56,7 +54,7 @@ metadata:
     app.kubernetes.io/version: "latest"
 spec:
   accessModes:
-    - "ReadWriteMany"
+    - "ReadWriteOnce"
   resources:
     requests:
       storage: "1Gi"
@@ -90,7 +88,7 @@ spec:
           name: etherpad
           securityContext:
             {}
-          image: "quay.io/redhattraining/etherpad:latest"
+          image: "quay-mirrortst.system-a.local:8443/etherpad:latest"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -112,4 +110,52 @@ spec:
       - name: etherpad-data
         persistentVolumeClaim:
           claimName: etherpad
-
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: deny-by-default
+spec:
+  podSelector: {}
+  ingress: []
+  egress: []
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-same-namespace
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+    - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-openshift-ingress
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          network.openshift.io/policy-group: ingress
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-kube-apiserver-operator
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-kube-apiserver-operator
+      podSelector:
+        matchLabels:
+          app: kube-apiserver-operator
+  policyTypes:
+  - Ingress

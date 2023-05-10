@@ -1,11 +1,9 @@
-Implement default Network policies by Openshift Project Creation (Not Namespace creation)
-
-To modify default-project template to include network isolation:
-
-$ oc adm create-bootstrap-project-template -o yaml > template.yaml
-
-edit template.yaml and include the following:
-
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: project-request
+objects:
 - kind: NetworkPolicy
   apiVersion: networking.k8s.io/v1
   metadata:
@@ -51,21 +49,34 @@ edit template.yaml and include the following:
             app: kube-apiserver-operator
     policyTypes:
     - Ingress
-
-Apply template with network isolation:
-
-$ oc create -f template.yaml -n openshift-config
-
-apply template to project.config.openshift.io/cluster resource
-
-$ oc edit project.config.openshift.io/cluster
-
-Include the projectRequestTemplate:
-
-apiVersion: config.openshift.io/v1
-kind: Project
-metadata:
-  ...
-spec:
-  projectRequestTemplate:
-    name: project-request
+- apiVersion: project.openshift.io/v1
+  kind: Project
+  metadata:
+    annotations:
+      openshift.io/description: ${PROJECT_DESCRIPTION}
+      openshift.io/display-name: ${PROJECT_DISPLAYNAME}
+      openshift.io/requester: ${PROJECT_REQUESTING_USER}
+    creationTimestamp: null
+    name: ${PROJECT_NAME}
+  spec: {}
+  status: {}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    creationTimestamp: null
+    name: admin
+    namespace: ${PROJECT_NAME}
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: admin
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: ${PROJECT_ADMIN_USER}
+parameters:
+- name: PROJECT_NAME
+- name: PROJECT_DISPLAYNAME
+- name: PROJECT_DESCRIPTION
+- name: PROJECT_ADMIN_USER
+- name: PROJECT_REQUESTING_USER
