@@ -54,7 +54,7 @@ metadata:
     app.kubernetes.io/version: "latest"
 spec:
   accessModes:
-    - "ReadWriteMany"
+    - "ReadWriteOnce"
   resources:
     requests:
       storage: "1Gi"
@@ -88,7 +88,7 @@ spec:
           name: etherpad
           securityContext:
             {}
-          image: "quay.io/redhattraining/etherpad:latest"
+          image: "quay-mirrortst.system-a.local:8443/etherpad:latest"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
