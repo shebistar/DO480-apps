@@ -1,12 +1,13 @@
 Implement default Network policies by Openshift Project Creation (Not Namespace creation)
 
-To modify default-project template to include network isolation:
+- To modify default-project template to include network isolation:
 
-$ oc adm create-bootstrap-project-template -o yaml > template.yaml
+```$ oc adm create-bootstrap-project-template -o yaml > template.yaml```
 
-edit template.yaml and include the following:
+- edit template.yaml and include the following:
 
-```- kind: NetworkPolicy
+```
+- kind: NetworkPolicy
   apiVersion: networking.k8s.io/v1
   metadata:
     name: deny-by-default
@@ -50,23 +51,26 @@ edit template.yaml and include the following:
           matchLabels:
             app: kube-apiserver-operator
     policyTypes:
-    - Ingress```
+    - Ingress
+```
 
 
-Apply template with network isolation:
+- Apply template with network isolation:
 
 ```$ oc create -f template.yaml -n openshift-config```
 
-apply template to project.config.openshift.io/cluster resource
+- apply template to project.config.openshift.io/cluster resource
 
 ```$ oc edit project.config.openshift.io/cluster```
 
-Include the projectRequestTemplate:
+- Include the projectRequestTemplate:
 
-```apiVersion: config.openshift.io/v1
+```
+apiVersion: config.openshift.io/v1
 kind: Project
 metadata:
   ...
 spec:
   projectRequestTemplate:
-    name: project-request```
+    name: project-request
+```
