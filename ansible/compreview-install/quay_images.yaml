@@ -1,0 +1,15 @@
+---
+- hosts: workstation
+  become: yes
+  become_user: root
+  vars_files:
+    - vars/main.yaml
+  module_defaults:
+    group/k8s:
+      namespace: "{{ namespace }}"
+      ca_cert: "/etc/pki/tls/certs/ca-bundle.crt"
+      host: "{{ hub_cluster_host }}"
+      kubeconfig: "{{ kubeconfig }}"
+  roles:
+    - quay_images
+

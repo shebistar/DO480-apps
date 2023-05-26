@@ -1,0 +1,46 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ managed_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking project presence
+  k8s_info:
+    kind: Namespace
+    name: test
+  register: name_test
+
+- name: create project
+  k8s:
+    name: test
+    api_version: v1
+    kind: Namespace
+    state: present
+  when: name_test.resources[0].metadata.name is not defined
+
+- name: Pause for policy to check namespace
+  pause:
+    seconds: 30
+
+- name: Checking project presence
+  k8s_info:
+    kind: Namespace
+    name: test
+  register: name_test
+
+- debug:
+    msg: "test namespace should not exist"
+  failed_when: name_test.resources[0].metadata.name is defined

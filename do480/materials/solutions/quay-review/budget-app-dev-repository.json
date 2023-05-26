@@ -1,0 +1,6 @@
+{
+    "namespace": "finance",
+    "repository": "budget-app-dev",
+    "description": "development",
+    "visibility": "private"
+}

@@ -1,0 +1,43 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check policy Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ policy_namespace }}"
+  register: policy_namespace_available
+
+- name: Policy namespace should be available
+  debug:
+    msg: "`rhacs-install` namespace is not available. Run `lab start compreview-install`."
+  failed_when: policy_namespace_available.resources[0].status is not defined
+
+- name: RHACS install policy Check
+  k8s_info:
+    api_version: policy.open-cluster-management.io/v1
+    kind: Policy
+    name: "policy-advanced-managed-cluster-security"
+    namespace: "{{ policy_namespace }}"
+  register: policy_secure
+  when: policy_namespace_available.resources[0].status is defined
+
+- name: policy secure
+  debug:
+    msg: "`policy-advanced-managed-cluster-security` is not available. Complete the previous exercise."
+  failed_when: policy_secure.resources[0].metadata.name is not defined

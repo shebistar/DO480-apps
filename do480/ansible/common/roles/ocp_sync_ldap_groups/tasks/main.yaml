@@ -1,0 +1,70 @@
+
+##This way produces:
+##"Failed to find exact match for v1.LDAPSyncConfig by [kind, name, singularName, shortNames]"
+# - name: Sync LDAP groups
+#   k8s:
+#     state: present
+#     definition:
+#       kind: LDAPSyncConfig
+#       api_version: v1
+#       url: ldaps://idm.ocp4.example.com
+#       bindDN: uid=admin,cn=users,cn=accounts,dc=ocp4,dc=example,dc=com
+#       bindPassword: Redhat123@!
+#       insecure: false
+#       ca: ca.crt
+#       rfc2307:
+#         groupsQuery:
+#           baseDN: "cn=groups,cn=accounts,dc=ocp4,dc=example,dc=com"
+#           scope: sub
+#           derefAliases: never
+#           pageSize: 0
+#           filter: (objectClass=ipausergroup)
+#         groupUIDAttribute: dn
+#         groupNameAttributes: [ cn ]
+#         groupMembershipAttributes: [ member ]
+#         usersQuery:
+#           baseDN: "cn=users,cn=accounts,dc=ocp4,dc=example,dc=com"
+#           scope: sub
+#           derefAliases: never
+#           pageSize: 0
+#         userUIDAttribute: dn
+#         userNameAttributes: [ uid ]
+#   delegate_to: utility
+
+- name: Creating ldapsync file
+  copy:
+    dest: "/tmp/ldapsync.yaml"
+    content: |
+        kind: LDAPSyncConfig
+        apiVersion: v1
+        url: ldaps://idm.ocp4.example.com
+        bindDN: uid=admin,cn=users,cn=accounts,dc=ocp4,dc=example,dc=com
+        bindPassword: Redhat123@!
+        insecure: false
+        ca: /home/lab/ocp4/ca.crt
+        rfc2307:
+          groupsQuery:
+            baseDN: "cn=groups,cn=accounts,dc=ocp4,dc=example,dc=com"
+            scope: sub
+            derefAliases: never
+            pageSize: 0
+            filter: (objectClass=ipausergroup)
+          groupUIDAttribute: dn
+          groupNameAttributes: [ cn ]
+          groupMembershipAttributes: [ member ]
+          usersQuery:
+            baseDN: "cn=users,cn=accounts,dc=ocp4,dc=example,dc=com"
+            scope: sub
+            derefAliases: never
+            pageSize: 0
+          userUIDAttribute: dn
+          userNameAttributes: [ uid ]
+  delegate_to: utility
+
+- name: Sync LDAP groups in hub cluster
+  shell: "oc adm groups sync --sync-config /tmp/ldapsync.yaml --confirm"
+  delegate_to: utility
+
+- name: Sync LDAP groups in managed clusters
+  shell: "oc --kubeconfig /home/lab/ocp4-mng/auth/kubeconfig adm groups sync --sync-config /tmp/ldapsync.yaml --confirm"
+  delegate_to: utility

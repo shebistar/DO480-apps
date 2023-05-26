@@ -1,0 +1,68 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ managed_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: check secret namespace
+  k8s_info:
+    kind: Namespace
+    name: stackrox
+  register: secret_namespace_available
+
+- name: RHACS namespace should be available
+  debug:
+    msg: "`stackrox` namespace is not available."
+  failed_when: secret_namespace_available.resources[0].status is not defined
+
+- name: Retrieve collector-tls secret
+  k8s_info:
+    kind: Secret
+    namespace: stackrox
+    name: collector-tls
+  register: rhacs_secret_collector
+  when: secret_namespace_available.resources[0].status is defined
+
+- name: RHACS collector-tls secret should available
+  debug:
+    msg: "`collector-tls` secret is not available."
+  failed_when: rhacs_secret_collector.resources[0].metadata.name is not defined
+
+- name: Retrieve admission-control-tls secret
+  k8s_info:
+    kind: Secret
+    namespace: stackrox
+    name: admission-control-tls
+  register: rhacs_secret_admission
+  when: secret_namespace_available.resources[0].status is defined
+
+- name: RHACS admission-control-tls secret should available
+  debug:
+    msg: "`admission-control-tls` secret is not available."
+  failed_when: rhacs_secret_admission.resources[0].metadata.name is not defined
+
+- name: Retrieve sensor-tls secret
+  k8s_info:
+    kind: Secret
+    namespace: stackrox
+    name: sensor-tls
+  register: rhacs_secret_sensor
+  when: secret_namespace_available.resources[0].status is defined
+
+- name: RHACS sensor-tls secret should available
+  debug:
+    msg: "`sensor-tls` secret is not available."
+  failed_when: rhacs_secret_sensor.resources[0].metadata.name is not defined

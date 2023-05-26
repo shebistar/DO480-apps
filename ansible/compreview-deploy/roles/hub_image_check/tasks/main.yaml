@@ -1,0 +1,41 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check hello-app Deployment
+  k8s_info:
+    kind: Deployment
+    name: hello-app
+    namespace: compreview-install
+  register: hub_hello_deploy
+
+- name: check deployment image
+  debug:
+    msg: "`hello-app` deployment is not using correct image tag."
+  failed_when: hub_hello_deploy.resources[0].spec.template.spec.containers[0].image != "central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v11"
+
+- name: curl stage url
+  uri:
+    url: http://hello-app.apps.ocp4.example.com
+    return_content: yes
+  register: url_stage
+
+- name: checking stage url
+  debug:
+    msg: URL is not working for stage environment
+  failed_when: '"Image Tag \t\t: v11</h2>\n<h2>Image OS\t\t: debian</h2>\n<h2>OS version \t\t: 11" not in url_stage.content'

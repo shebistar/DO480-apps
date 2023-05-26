@@ -1,0 +1,95 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check RHACS Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ operator_namespace }}"
+  register: operator_namespace_hub_available
+
+- name: RHACS namespace should be available
+  debug:
+    msg: "`rhacs-operator` namespace is not available. Complete the `rhacs-install` exercise before starting this one."
+  failed_when: operator_namespace_hub_available.resources[0].status is not defined
+
+- name: Retrieve CSV Subscription version
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: "rhacs-operator"
+    namespace: "{{ operator_namespace }}"
+  register: rhacs_hub_subs
+  ignore_errors: True
+  when: operator_namespace_hub_available.resources[0].status is defined
+
+- name: RHACS CSV Subscription should be available
+  debug:
+    msg: "RHACS CSV Subscription is not available. Complete the `rhacs-install` exercise before starting this one."
+  failed_when: rhacs_hub_subs.resources[0].status is not defined
+
+- name: Retrieve RHACS OperatorGroup name
+  k8s_info:
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    namespace: "{{ operator_namespace }}"
+  register: acs_hub_opg
+  ignore_errors: True
+  when: operator_namespace_hub_available.resources[0].status is defined
+
+- name: RHACS OperatorGroup should be available
+  debug:
+    msg: "RHACS OperatorGroup is not available. Complete the `rhacs-install` exercise before starting this one."
+  failed_when: acs_hub_opg.resources[0].status is not defined
+
+- name: Check RHACS resource Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ rhacs_namespace }}"
+  register: rhacs_namespace_hub_available
+
+- name: RHACS namespace should be available
+  debug:
+    msg: "`stackrox` namespace is not available. Complete the `rhacs-install` exercise before starting this one."
+  failed_when: rhacs_namespace_hub_available.resources[0].status is not defined
+
+- name: Retrieve central name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: Central
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_hub_central
+  when: rhacs_namespace_hub_available.resources[0].status is defined
+
+- name: RHACS central should be available
+  debug:
+    msg: "RHACS central is not available. Complete the `rhacs-install` exercise before starting this one."
+  failed_when: rhacs_hub_central.resources[0].metadata.name is not defined
+
+- name: Retrieve SecuredCluster name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_hub_secure
+  when: rhacs_namespace_hub_available.resources[0].status is defined
+
+- name: RHACS securedcluster should be available
+  debug:
+    msg: "RHACS securedcluster is not available. Complete the `rhacs-import` exercise before starting this one."
+  failed_when: rhacs_hub_secure.resources[0].metadata.name is not defined

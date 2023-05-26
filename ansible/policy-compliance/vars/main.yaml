@@ -1,0 +1,5 @@
+---
+namespace: "openshift-compliance"
+kubeconfig: "/home/student/.kube/config"
+managed_cluster_host: "https://api.ocp4-mng.example.com:6443"
+hub_cluster_host: "https://api.ocp4.example.com:6443"

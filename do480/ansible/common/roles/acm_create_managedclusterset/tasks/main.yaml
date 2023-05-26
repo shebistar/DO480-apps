@@ -1,0 +1,43 @@
+
+---
+#
+#       |`o``\  ,
+#       |_|-/ \_|__
+#     _/..\-.\|   |
+#______\""/`````(o)___
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+
+- name: Create the ManagedClusterSet
+  k8s:
+    api_version: cluster.open-cluster-management.io/v1alpha1
+    kind: ManagedClusterSet
+    name: "{{ managed_cluster_set }}"
+    state: present
+    namespace: ""
+
+- name: Creating the join ClusterRole
+  k8s:
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: clusterrole1
+      spec:
+        rules:
+         - apiGroups: ["cluster.open-cluster-management.io"]
+           resources: ["managedclustersets/join"]
+           resourceNames: ["{{ managed_cluster_set }}"]
+           verbs: ["create"]
+
+- name: Set label to imported cluster for adding to the ManagedClusterSet
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }} && oc label managedcluster "{{ clusterset_member }}" 'cluster.open-cluster-management.io/clusterset={{managed_cluster_set}}' --overwrite
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+

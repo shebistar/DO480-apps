@@ -1,0 +1,53 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+
+- name: Login to central registry
+  shell:
+    cmd: podman login -u cloudadmin -p redhat central-quay-registry.apps.ocp4.example.com
+
+- name: Removing all images
+  shell:
+    cmd: podman rmi -a
+  ignore_errors: true
+
+- name: podman image pull
+  podman_image:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v10
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v11
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:latest
+
+- name: Gather info for all images
+  podman_image_info:
+  register: pulled_images
+
+- debug:
+    msg: The hello-app image is unavailable with v10, v11, and the latest tags.
+  failed_when:
+    - pulled_images.images[0].NamesHistory is not defined
+    - pulled_images.images[1].NamesHistory is not defined
+    - pulled_images.images[2].NamesHistory is not defined
+    - pulled_images.images[3].NamesHistory is defined
+
+- name: podman image remove
+  podman_image:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v10
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v11
+    - central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:latest
+  ignore_errors: true

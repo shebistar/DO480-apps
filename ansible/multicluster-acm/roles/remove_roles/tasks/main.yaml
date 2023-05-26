@@ -1,0 +1,39 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift managed cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ managed_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Ensure klusterlet cluster role is removed
+  k8s:
+    api_version: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    state: absent
+    name: klusterlet
+
+- name: Ensure open-cluster-management:klusterlet-admin-aggregate-clusterrole cluster role is removed
+  k8s:
+    api_version: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    state: absent
+    name: 'open-cluster-management:klusterlet-admin-aggregate-clusterrole'
+
+- name: Ensure klusterlet cluster role binding is removed
+  k8s:
+    api_version: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    state: absent
+    name: klusterlet

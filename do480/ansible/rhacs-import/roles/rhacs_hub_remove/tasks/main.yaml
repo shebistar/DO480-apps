@@ -1,0 +1,170 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check RHACS resource Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ rhacs_namespace }}"
+  register: rhacs_namespace_available
+
+- name: Retrieve SecuredCluster name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_hub_secure
+
+- name: Ensure RHACS SecuredCluster is absent
+  k8s:
+    state: absent
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    name: "{{ rhacs_hub_secure.resources[0].metadata.name }}"
+    namespace: "{{ rhacs_namespace }}"
+  when: rhacs_hub_secure.resources[0].metadata.name is defined
+
+- name: Retrieve central name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: Central
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_central
+
+- name: Ensure RHACS Central is absent
+  k8s:
+    state: absent
+    api_version: platform.stackrox.io/v1alpha1
+    kind: Central
+    name: "{{ rhacs_central.resources[0].metadata.name }}"
+    namespace: "{{ rhacs_namespace }}"
+  when: rhacs_central.resources[0].metadata.name is defined
+
+- name: Ensure RHACS resources Namespace is absent
+  k8s:
+    name: "{{ rhacs_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: absent
+  when: rhacs_namespace_available.resources[0].status is defined
+
+- name: Deleting global resources
+  shell:
+    cmd: oc get clusterrole,clusterrolebinding,role,rolebinding,psp -o name | grep stackrox | xargs oc delete --wait
+  when: rhacs_namespace_available.resources[0].status is defined
+  ignore_errors: True
+
+- name: Deleting global resources
+  shell:
+    cmd: oc delete scc -l "app.kubernetes.io/name=stackrox"
+  when: rhacs_namespace_available.resources[0].status is defined
+  ignore_errors: True
+
+- name: Deleting global resources
+  shell:
+    cmd: oc delete ValidatingWebhookConfiguration stackrox
+  when: rhacs_namespace_available.resources[0].status is defined
+  ignore_errors: True
+
+- name: Deleting global resources
+  shell:
+    cmd: for namespace in $(oc get ns | tail -n +2 | awk '{print $1}'); do     oc label namespace $namespace namespace.metadata.stackrox.io/id-;     oc label namespace $namespace namespace.metadata.stackrox.io/name-;     oc annotate namespace $namespace modified-by.stackrox.io/namespace-label-patcher-;   done
+  when: rhacs_namespace_available.resources[0].status is defined
+  ignore_errors: True
+
+- name: Check RHACS Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ operator_namespace }}"
+  register: operator_namespace_available
+
+- name: Retrieve CSV Subscription version
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: "rhacs-operator"
+    namespace: "{{ operator_namespace }}"
+  register: rhacs_subs
+  ignore_errors: True
+
+- name: Ensure RHACS Subscription is absent
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: rhacs-operator
+      spec:
+        sourceNamespace: openshift-marketplace
+        source: do480-catalog
+        channel: "{{ channel }}"
+        installPlanApproval: Automatic
+        name: rhacs-operator
+        namespace: "{{ operator_namespace }}"
+  when: operator_namespace_available.resources[0].status is defined
+
+- name: Retrieve RHACS OperatorGroup name
+  k8s_info:
+    api_version: operators.coreos.com/v1
+    kind: OperatorGroup
+    namespace: "{{ operator_namespace }}"
+  register: acs_opg
+  ignore_errors: True
+  when: operator_namespace_available.resources[0].status is defined
+
+- name: Ensure RHACS OperatorGroup is absent
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: "{{ acs_opg.resources[0].metadata.name }}"
+  when: operator_namespace_available.resources[0].status is defined
+
+- name: Ensure ACS CSV is absent
+  k8s:
+    state: absent
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    name: "{{ rhacs_subs.resources[0].status.installedCSV }}"
+    namespace: "{{ operator_namespace }}"
+  when: rhacs_subs.resources | length > 0
+
+- name: Wait until no pods are running before removing the namespace
+  k8s_info:
+    kind: Pod
+    namespace: "{{ operator_namespace }}"
+  register: pod_list
+  retries: 30
+  delay: 20
+  until: pod_list.resources | length == 0
+
+
+- name: Ensure RHACS Namespace is absent
+  k8s:
+    name: "{{ operator_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: absent
+  when: operator_namespace_available.resources[0].status is defined
+
+
+
+

@@ -1,0 +1,42 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check RHACS resource Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ rhacs_namespace }}"
+  register: rhacs_namespace_hub_available
+
+- name: RHACS namespace should be available
+  debug:
+    msg: "`stackrox` namespace is not available. Run `lab start compreview-install`."
+  failed_when: rhacs_namespace_hub_available.resources[0].status is not defined
+
+- name: Retrieve SecuredCluster name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_hub_secure
+  when: rhacs_namespace_hub_available.resources[0].status is defined
+
+- name: RHACS securedcluster should be available
+  debug:
+    msg: "RHACS securedcluster is not available. Complete the previous exercise."
+  failed_when: rhacs_hub_secure.resources[0].metadata.name is not defined

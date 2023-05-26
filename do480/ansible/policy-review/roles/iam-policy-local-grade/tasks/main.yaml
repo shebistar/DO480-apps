@@ -1,0 +1,38 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking Iam policy
+  k8s_info:
+    api_version: policy.open-cluster-management.io/v1
+    kind: IamPolicy
+    namespace: local-cluster
+  register: iam_policy_local
+
+- debug:
+    msg: "IamPolicy should exists"
+  failed_when: iam_policy_local.resources[0].kind != "IamPolicy"
+
+- debug:
+    msg: "MaxClusterRoleBindingUser should be 2"
+  failed_when: iam_policy_local.resources[0].spec.maxClusterRoleBindingUsers != 2
+
+- debug:
+    msg: "IAM policy should have NonCompliant status for local-cluster"
+  failed_when: iam_policy_local.resources[0].status.compliant != "NonCompliant"
+

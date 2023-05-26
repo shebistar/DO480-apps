@@ -1,0 +1,11 @@
+- name: Get LDAP CA certificate
+  uri:
+    url: http://idm.ocp4.example.com/ipa/config/ca.crt
+    return_content: yes
+  register: ldap_cert
+  delegate_to: utility
+
+- name: Copy LDAP cert to /home/student/ca.crt
+  copy:
+    dest: "/home/student/ca.crt"
+    content: "{{ ldap_cert.content }}"

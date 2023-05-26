@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-central
+  labels:
+    app: hello-central
+    name: hello-central
+  namespace: operate-review
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-central
+      name: hello-central
+  template:
+    metadata:
+      labels:
+        app: hello-central
+        name: hello-central
+    spec:
+      containers:
+      - name: hello-central
+        image: central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:latest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hello-central
+    name: hello-central
+  name: hello-central
+  namespace: operate-review
+spec:
+  ports:
+  - port: 8080
+  selector:
+    name: hello-central
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: hello-central
+  labels:
+    app: hello-central
+    name: hello-central
+  namespace: operate-review
+spec:
+  host: hello-central.apps.ocp4.example.com
+  subdomain: ''
+  to:
+    kind: Service
+    name: hello-central
+    weight: 100
+  port:
+    targetPort: 8080
+  wildcardPolicy: None

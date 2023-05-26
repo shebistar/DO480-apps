@@ -1,0 +1,42 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: check secret namespace
+  k8s_info:
+    kind: Namespace
+    name: compreview-install
+  register: compsecret_namespace_available
+
+- name: RHACS namespace should be available
+  debug:
+    msg: "`compreview-install` namespace is not available."
+  failed_when: compsecret_namespace_available.resources[0].status is not defined
+
+- name: Retrieve cluster init secret
+  k8s_info:
+    kind: Secret
+    namespace: compreview-install
+    name: compsecret
+  register: quayrhacs_secret
+  when: compsecret_namespace_available.resources[0].status is defined
+
+- name: RHACS init secret should available
+  debug:
+    msg: "`compsecret` secret is not available."
+  failed_when: quayrhacs_secret.resources[0].metadata.name is not defined

@@ -1,0 +1,201 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ managed_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+
+- name: Retrieve CSV Subscription version
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    namespace: "{{ namespace }}"
+  register: compliance_subs
+
+
+#ComplianceSuite
+- name: Delete ComplianceSuite
+  k8s:
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ComplianceSuite
+    state: absent
+    name: e8
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait to ComplianceSuite deletion
+  k8s_info:
+    kind: ComplianceSuite
+    namespace: "{{ namespace }}"
+    name: e8
+  register: output_info
+  # Can take up to 20 mins, docs said. About 10 minutes in do480 hub ocp
+  # 54 retries, f.e.
+  # 57 retries, f.e.
+  # 55 retries, f.e
+  until: not output_info.resources
+  delay: 10
+  retries: 10
+
+#ScanSettingBinding
+- name: Delete ScanSettingBinding
+  k8s:
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ScanSettingBinding
+    state: absent
+    name: e8
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait for ScanSettingBinding deletion
+  k8s_info:
+    kind: ScanSettingBinding
+    namespace: "{{ namespace }}"
+    name: e8
+  register: output_info
+  # Can take up to 20 mins, docs said. About 10 minutes in do480 hub ocp
+  # 54 retries, f.e.
+  # 57 retries, f.e.
+  # 55 retries, f.e
+  until: not output_info.resources
+  delay: 10
+  retries: 10
+
+#ScanSetting
+- name: Delete ScanSetting
+  k8s:
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ScanSetting
+    state: absent
+    name: default
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait for ScanSetting deletion
+  k8s_info:
+    kind: ScanSetting
+    namespace: "{{ namespace }}"
+    name: default
+  register: output_info
+  # Can take up to 20 mins, docs said. About 10 minutes in do480 hub ocp
+  # 54 retries, f.e.
+  # 57 retries, f.e.
+  # 55 retries, f.e
+  until: not output_info.resources
+  delay: 10
+  retries: 10
+
+
+#ProfileBundle
+- name: Delete ProfileBundle ocp4
+  k8s:
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ProfileBundle
+    state: absent
+    name: ocp4
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait for ProfileBundle deletion
+  k8s_info:
+    kind: ProfileBundle
+    namespace: "{{ namespace }}"
+    name: ocp4
+  register: output_info
+  # Can take up to 20 mins, docs said. About 10 minutes in do480 hub ocp
+  # 54 retries, f.e.
+  # 57 retries, f.e.
+  # 55 retries, f.e
+  until: not output_info.resources
+  delay: 10
+  retries: 10
+
+- name: Delete ProfileBundle rhcos4
+  k8s:
+    api_version: compliance.openshift.io/v1alpha1
+    kind: ProfileBundle
+    state: absent
+    name: rhcos4
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait for ProfileBundle deletion
+  k8s_info:
+    kind: ProfileBundle
+    namespace: "{{ namespace }}"
+    name: rhcos4
+  register: output_info
+  # Can take up to 20 mins, docs said. About 10 minutes in do480 hub ocp
+  # 54 retries, f.e.
+  # 57 retries, f.e.
+  # 55 retries, f.e
+  until: not output_info.resources
+  delay: 10
+  retries: 10
+
+- name: Remove Compliance Subscription
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: compliance-operator
+      spec:
+        sourceNamespace: openshift-marketplace
+        source: do480-catalog
+        installPlanApproval: Automatic
+        name: compliance-operator
+        namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Ensure Compliance OperatorGroup is absent
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1
+      kind: OperatorGroup
+      metadata:
+        name: compliance-operator
+      spec:
+        targetNamespaces:
+        - "{{ namespace }}"
+
+- name: Ensure Compliance CSV is absent
+  k8s:
+    state: absent
+    api_version: operators.coreos.com/v1alpha1
+    kind: ClusterServiceVersion
+    name: "{{ compliance_subs.resources[0].metadata.name }}"
+    namespace: "{{ namespace }}"
+  when: compliance_subs.resources[0].metadata.name is defined
+
+- name: Wait until no pods are running before removing the namespace
+  k8s_info:
+    kind: Pod
+    namespace: "{{ namespace }}"
+  register: pod_list
+  retries: 30
+  delay: 20
+  until: pod_list.resources | length == 0
+
+
+- name: Ensure openshift-compliance Namespace is absent
+  k8s:
+    name: "{{ namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: absent

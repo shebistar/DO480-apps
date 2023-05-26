@@ -1,0 +1,9 @@
+---
+rhacs_namespace: "stackrox"
+channel: "latest"
+operator_namespace: "rhacs-operator"
+policy_namespace: "rhacs-install"
+kubeconfig: "/home/student/.kube/config"
+hub_cluster_host: "https://api.ocp4.example.com:6443"
+managed_cluster_name: "managed-cluster"
+managed_cluster_host: "https://api.ocp4-mng.example.com:6443"

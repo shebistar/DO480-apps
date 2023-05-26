@@ -1,0 +1,71 @@
+---
+#
+#       |`o``\  ,
+#       |_|-/ \_|__
+#     _/..\-.\|   |
+#______\""/`````(o)___
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+
+
+- name: Delete the project for Quay
+  k8s:
+    api_version: project.openshift.io/v1
+    kind: Project
+    name: "{{ quay_namespace }}"
+    state: absent
+    namespace: ""
+
+- name: Wait until Quay namespace is completely gone
+  k8s_info:
+    kind: Namespace
+    name: "{{ quay_namespace }}"
+  register: output_info
+  until: not output_info.resources
+  delay: 5
+  retries: 30
+  ignore_errors: True
+
+- name: Retrieve CSV Subscription version
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: quay-operator
+    namespace: openshift-operators
+  register: quay_subs
+  when:
+  - remove_quay_operator|bool
+
+- name: Delete Subscription to Quay Operator
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: quay-operator
+        namespace: openshift-operators
+      spec:
+        sourceNamespace: openshift-marketplace
+        source: do480-catalog
+        channel: "{{ quay_channel }}"
+        installPlanApproval: Automatic
+        name: quay-operator
+  when:
+  - remove_quay_operator|bool
+  - quay_subs.resources | length > 0
+
+- name: Delete Quay CSV
+  k8s:
+    state: absent
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: ClusterServiceVersion
+      metadata:
+        name: "{{ quay_subs.resources[0].status.installedCSV }}"
+        namespace: openshift-operators
+  when:
+  - remove_quay_operator|bool
+  - quay_subs.resources | length > 0
+

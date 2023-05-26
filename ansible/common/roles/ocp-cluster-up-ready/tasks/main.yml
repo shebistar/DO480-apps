@@ -1,0 +1,82 @@
+---
+# tasks file for ocp-cluster-up-ready
+- name: Console pods are ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Endpoints
+    name: console
+    namespace: openshift-console
+  register: console_endpoints
+  retries: 60
+  delay: 5
+  until:
+    - console_endpoints['resources'] | length > 0
+    - console_endpoints['resources'][0]['subsets'][0]['addresses'] is defined
+    - console_endpoints['resources'][0]['subsets'][0]['addresses'] | length == 2
+
+- name: Check console route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: console
+    namespace: openshift-console
+  register: console_route
+
+- name: Check console URL
+  uri:
+    url: "https://{{ console_route['resources'][0]['spec']['host'] }}/auth/login"
+    validate_certs: False
+    follow_redirects: safe
+  register: console_url
+
+- name: Router pods are ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Endpoints
+    name: router-internal-default
+    namespace: openshift-ingress
+  register: router_endpoints
+  retries: 60
+  delay: 5
+  until:
+    - router_endpoints['resources'] | length > 0
+    - router_endpoints['resources'][0]['subsets'][0]['addresses'] is defined
+    - router_endpoints['resources'][0]['subsets'][0]['addresses'] | length == 2
+
+#- name: Oauth pods are ready
+#  kubernetes.core.k8s_info:
+#    api_version: v1
+#    kind: Endpoints
+#    name: oauth-openshift
+#    namespace: openshift-authentication
+#  register: oauth_endpoints
+#  retries: 60
+#  delay: 5
+#  until:
+#    - oauth_endpoints['resources'] | length > 0
+#    - oauth_endpoints['resources'][0]['subsets'][0]['addresses'] is defined
+#    - oauth_endpoints['resources'][0]['subsets'][0]['addresses'] | length == 2
+
+- name: Oauth pods are ready
+  shell: "oc wait --namespace=openshift-authentication --for=condition=Ready pods --selector app=oauth-openshift --timeout=900s"
+  register: oauth_pods_ready
+
+#- name: result
+#  debug: var=oauth_pods_ready.stdout_lines
+
+
+- name: Check OAuth URL
+  uri:
+    url: "{{ console_url['url'] }}"
+    validate_certs: False
+    follow_redirects: safe
+
+- name: Check cluster API is accesible
+  uri:
+    url: "{{ hub_cluster_host }}/version"
+    validate_certs: False
+    return_content: True
+  retries: 60
+  delay: 5
+  register: cluster_api
+  until: cluster_api['content'] is defined

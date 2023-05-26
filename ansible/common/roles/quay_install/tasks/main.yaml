@@ -1,0 +1,183 @@
+---
+#
+#       |`o``\  ,
+#       |_|-/ \_|__
+#     _/..\-.\|   |
+#______\""/`````(o)___
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+
+- name: Create Subscription to Quay Operator
+  k8s:
+    state: present
+    definition:
+      apiVersion: operators.coreos.com/v1alpha1
+      kind: Subscription
+      metadata:
+        name: quay-operator
+        namespace: openshift-operators
+      spec:
+        sourceNamespace: openshift-marketplace
+        source: do480-catalog
+        channel: "{{ quay_channel }}"
+        installPlanApproval: Automatic
+        name: quay-operator
+
+- name: Retrieve CSV Subscription version
+  k8s_info:
+    api_version: operators.coreos.com/v1alpha1
+    kind: Subscription
+    name: quay-operator
+    namespace: openshift-operators
+  register: quay_subs
+  retries: 8
+  delay: 5
+  until:
+  - quay_subs.resources | length > 0
+  - quay_subs.resources[0].status is defined
+  - quay_subs.resources[0].status.installedCSV is defined
+
+- name: Wait until Quay operator deployment is ready
+  k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ quay_subs.resources[0].status.installedCSV }}"
+    namespace: openshift-operators
+  register: quay_deployment
+  retries: 30
+  delay: 20
+  until:
+  - quay_deployment.resources | length > 0
+  - quay_deployment.resources[0].status is defined
+  - quay_deployment.resources[0].status.readyReplicas is defined
+  - quay_deployment.resources[0].status.readyReplicas >= 1
+
+- name: Create the project for Quay
+  k8s:
+    api_version: project.openshift.io/v1
+    kind: Project
+    name: "{{ quay_namespace }}"
+    state: present
+    namespace: ""
+
+- name: Get LDAP CA certificate
+  uri:
+    url: http://idm.ocp4.example.com/ipa/config/ca.crt
+    return_content: yes
+  register: ldap_cert
+  delegate_to: utility
+
+- name: Create the Quay configuration secret with LDAP
+  k8s:
+    state: present
+    definition:
+      api_version: v1
+      kind: Secret
+      type: Opaque
+      metadata:
+        namespace: "{{ quay_namespace }}"
+        name: init-config-bundle-secret
+      stringData:
+        config.yaml: |
+          AUTHENTICATION_TYPE: LDAP
+          FEATURE_USER_INITIALIZE: true
+          BROWSER_API_CALLS_XHR_ONLY: false
+          SUPER_USERS:
+          - cloudadmin
+          - admin
+          FEATURE_USER_CREATION: true
+          LDAP_ADMIN_DN: uid=admin,cn=users,cn=accounts,dc=ocp4,dc=example,dc=com
+          LDAP_ADMIN_PASSWD: Redhat123@!
+          LDAP_ALLOW_INSECURE_FALLBACK: false
+          LDAP_BASE_DN:
+              - cn=accounts
+              - dc=ocp4
+              - dc=example
+              - dc=com
+          LDAP_EMAIL_ATTR: mail
+          LDAP_UID_ATTR: uid
+          LDAP_URI: ldaps://idm.ocp4.example.com
+          LDAP_USER_RDN:
+              - cn=users
+          FEATURE_TEAM_SYNCING: true
+          TEAM_RESYNC_STALE_TIME: 60m
+          FEATURE_NONSUPERUSER_TEAM_SYNCING_SETUP: true
+        ldap.crt: "{{ ldap_cert.content }}"
+  when:
+  - quay_auth_type == "ldap"
+
+- name: Create the Quay configuration secret with database auth
+  k8s:
+    state: present
+    definition:
+      api_version: v1
+      kind: Secret
+      type: Opaque
+      metadata:
+        namespace: "{{ quay_namespace }}"
+        name: init-config-bundle-secret
+      stringData:
+        config.yaml: |
+          FEATURE_USER_INITIALIZE: true
+          BROWSER_API_CALLS_XHR_ONLY: false
+          SUPER_USERS:
+          - cloudadmin
+          - admin
+          FEATURE_USER_CREATION: true
+        ldap.crt: "{{ ldap_cert.content }}"
+  when:
+  - quay_auth_type == "database"
+
+
+- name: Create the QuayRegistry
+  k8s:
+    state: present
+    definition:
+      api_version: quay.redhat.com/v1
+      kind: QuayRegistry
+      metadata:
+        namespace: "{{ quay_namespace }}"
+        name: "{{ quay_registry_name }}"
+      spec:
+        configBundleSecret: init-config-bundle-secret
+        components:
+          - kind: clair
+            managed: false
+          - kind: horizontalpodautoscaler
+            managed: false
+          - kind: mirror
+            managed: false
+
+- name: Wait until Quay deployments are ready
+  k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ quay_namespace }}"
+  register: quay_deployment
+  retries: 48
+  delay: 5
+  until:
+  - quay_deployment.resources | length == 4
+  - quay_deployment.resources[0].status is defined
+  - quay_deployment.resources[0].status.readyReplicas is defined
+  - quay_deployment.resources[0].status.readyReplicas == quay_deployment.resources[0].spec.replicas
+  - quay_deployment.resources[1].status is defined
+  - quay_deployment.resources[1].status.readyReplicas is defined
+  - quay_deployment.resources[1].status.readyReplicas == quay_deployment.resources[1].spec.replicas
+  - quay_deployment.resources[2].status is defined
+  - quay_deployment.resources[2].status.readyReplicas is defined
+  - quay_deployment.resources[2].status.readyReplicas == quay_deployment.resources[2].spec.replicas
+  - quay_deployment.resources[3].status is defined
+  - quay_deployment.resources[3].status.readyReplicas is defined
+  - quay_deployment.resources[3].status.readyReplicas == quay_deployment.resources[3].spec.replicas
+
+- ipa_user:
+    name: cloudadmin
+    state: present
+    password: redhat
+    givenname: Superadmin
+    sn: Superadmin
+  delegate_to: utility
+
+

@@ -1,0 +1,42 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking managed-cluster label
+  k8s_info:
+    api_version: cluster.open-cluster-management.io/v1
+    kind: ManagedCluster
+    name: managed-cluster
+  register: managed_label
+
+- debug:
+    msg: label env=emea should be available for managed-cluster
+  failed_when: managed_label.resources[0].metadata.labels.env != "emea"
+
+- name: Checking local-cluster label
+  k8s_info:
+    api_version: cluster.open-cluster-management.io/v1
+    kind: ManagedCluster
+    name: local-cluster
+  register: local_label
+
+- debug:
+    msg: label env=apac should be available for local-cluster
+  failed_when: local_label.resources[0].metadata.labels.env != "apac"
+
+

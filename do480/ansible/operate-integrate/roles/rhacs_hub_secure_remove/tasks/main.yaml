@@ -1,0 +1,42 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check RHACS resource Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ rhacs_namespace }}"
+  register: rhacs_namespace_available
+
+- name: Retrieve SecuredCluster name
+  k8s_info:
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    namespace: "{{ rhacs_namespace }}"
+  register: rhacs_secure
+
+- name: Ensure RHACS SecuredCluster is absent
+  k8s:
+    state: absent
+    api_version: platform.stackrox.io/v1alpha1
+    kind: SecuredCluster
+    name: "{{ rhacs_central.resources[0].metadata.name }}"
+    namespace: "{{ rhacs_namespace }}"
+  when: rhacs_secure.resources[0].metadata.name is defined
+
+

@@ -1,0 +1,44 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+
+- name: Retrieving Secret
+  shell:
+    cmd: oc extract secret/htpasswd-secret -n openshift-config --to /tmp/ --confirm
+
+- name: Adding user1
+  shell:
+    cmd: htpasswd -b /tmp/htpasswd user1 user1
+
+- name: Adding user2
+  shell:
+    cmd: htpasswd -b /tmp/htpasswd user2 user2
+
+- name: Updating Secret
+  shell:
+    cmd: oc set data secret/htpasswd-secret --from-file htpasswd=/tmp/htpasswd -n openshift-config
+
+- name: Add cluster-admin role
+  shell:
+    cmd: oc adm policy add-cluster-role-to-user cluster-admin user1 --rolebinding-name=cluster-admin
+
+- name: Add cluster-admin role
+  shell:
+    cmd: oc adm policy add-cluster-role-to-user cluster-admin user2 --rolebinding-name=cluster-admin
+

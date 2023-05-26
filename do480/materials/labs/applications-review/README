@@ -1,0 +1,5 @@
+[student@workstation applications-kustomize]$ tree
+base
+overlays/
+├── apac
+└── emea

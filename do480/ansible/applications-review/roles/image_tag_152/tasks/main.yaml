@@ -1,0 +1,27 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking image
+  shell:
+    cmd: oc describe deploy mysql -n mysql | grep Image
+  register: reg_image
+
+- debug:
+    msg: Image tag should be 1-152
+  failed_when: '"registry.redhat.io/rhel8/mysql-80:1-152" not in reg_image.stdout'

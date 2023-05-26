@@ -1,0 +1,33 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Check policy Namespace
+  k8s_info:
+    kind: Namespace
+    name: "{{ policy_namespace }}"
+  register: policy_namespace_available
+
+- name: Ensure Policy Namespace is absent
+  k8s:
+    name: "{{ policy_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: absent
+  when: policy_namespace_available.resources[0].status is defined
+

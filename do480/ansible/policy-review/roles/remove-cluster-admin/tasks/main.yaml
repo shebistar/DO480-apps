@@ -1,0 +1,52 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+
+- name: Retrieving clusterrolebinding information
+  k8s_info:
+    api_version: rbac.authorization.k8s.io/v1
+    name: cluster-admin
+    kind: ClusterRoleBinding
+  register: crb_info
+
+- name: Remove cluster-admin role for user1
+  shell:
+    cmd: oc adm policy remove-cluster-role-from-user cluster-admin user1
+  when: crb_info.resources[0] is search("user1")
+
+- name: Remove cluster-admin role for user2
+  shell:
+    cmd: oc adm policy remove-cluster-role-from-user cluster-admin user2
+  when: crb_info.resources[0] is search("user2")
+
+- name: Retrieving secret
+  shell:
+    cmd: oc extract secret/htpasswd-secret -n openshift-config --to /tmp/ --confirm
+
+- name: Removing user1
+  shell:
+    cmd: htpasswd -D /tmp/htpasswd user1
+
+- name: Removing user2
+  shell:
+    cmd: htpasswd -D /tmp/htpasswd user2
+
+- name: Updating Secret
+  shell:
+    cmd: oc set data secret/htpasswd-secret --from-file htpasswd=/tmp/htpasswd -n openshift-config

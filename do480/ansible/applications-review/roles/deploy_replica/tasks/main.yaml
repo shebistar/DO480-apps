@@ -1,0 +1,29 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ managed_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking deployment
+  shell:
+    cmd: oc describe deploy mysql -n mysql | grep "NewReplicaSet:"
+  register: reg_replica
+
+- debug:
+    msg: 1/1 replica
+  failed_when: '"1/1 replicas created" not in reg_replica.stdout'
+
+

@@ -1,0 +1,42 @@
+---
+#    _______________
+#   |  ___________  |
+#   | |           | |
+#   | |   o _ o   | |
+#   | |  \_____/  | |
+#   | |___________| |
+#   |_______________|
+#    __|_________|__
+#   / ************* \
+#  / *************** \
+#  -------------------
+#
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+- name: Checking image
+  shell:
+    cmd: oc describe deploy hello-central -n operate-review | grep Image
+  register: reg_image
+
+- debug:
+    msg: "The hello-central application is not using `v1.0` image tag."
+  failed_when: '"central-quay-registry.apps.ocp4.example.com/cloudadmin/hello-app:v1.0" not in reg_image.stdout'
+
+- name: test hello-central app url
+  uri:
+    url: http://hello-central.apps.ocp4.example.com
+    return_content: yes
+  register: central_msg
+  ignore_errors: True
+
+- name: Check msg
+  debug:
+    msg: "The hello-central application is not using `v1.0` image tag."
+  failed_when: "'Image version : v1.0' not in central_msg.content"
+
+
+

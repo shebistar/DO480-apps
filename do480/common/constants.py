@@ -1,0 +1,12 @@
+COURSE_SKU = 'DO480'
+USER_NAME = 'lab'
+USER_PASSWORD = ''
+SSH_KEY = '/home/student/.ssh/lab_rsa'
+IDM_SERVER = ['idm.ocp4.example.com']
+IDM_USERNAME = 'admin'
+IDM_PASSWORD = 'Redhat123@!'
+OCP4_API = 'api.ocp4.example.com:6443'
+OCP4_MNG_API = 'api.ocp4-mng.example.com:6443'
+OCP4_SNO_API = 'api.ocp4-sno.example.com:6443'
+REGISTRY_USERNAME = 'YOURUSER'
+REGISTRY_PASSWORD = 'YOURPASS'

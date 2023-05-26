@@ -1,0 +1,39 @@
+
+---
+#
+#       |`o``\  ,
+#       |_|-/ \_|__
+#     _/..\-.\|   |
+#______\""/`````(o)___
+- name: Login to OpenShift cluster
+  shell:
+    cmd: oc login -u admin -p redhat {{ hub_cluster_host }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig }}"
+
+
+
+- name: Delete Observability
+  k8s:
+    api_version: observability.open-cluster-management.io/v1beta2
+    kind: MultiClusterObservability
+    name: "observability"
+    state: absent
+  ignore_errors: True
+
+- name: Ensure Observability Namespace is absent
+  k8s:
+    name: "{{ observability_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: absent
+
+- name: Wait until Observability namespace is completely gone
+  k8s_info:
+    kind: Namespace
+    name: "{{ observability_namespace }}"
+  register: output_info
+  until: not output_info.resources
+  delay: 10
+  retries: 100
+  ignore_errors: True
