@@ -1,0 +1,344 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: argo-workflows
+  namespace: si-policies
+  annotations:
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  creationTimestamp: 2023-07-19T15:13:53Z
+  generation: 4
+  managedFields:
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:policy.open-cluster-management.io/categories: {}
+            f:policy.open-cluster-management.io/controls: {}
+            f:policy.open-cluster-management.io/standards: {}
+        f:spec:
+          .: {}
+          f:disabled: {}
+          f:policy-templates: {}
+      manager: unknown
+      operation: Update
+      time: 2023-07-19T15:17:53Z
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:compliant: {}
+          f:placement: {}
+          f:status: {}
+      manager: governance-policy-propagator
+      operation: Update
+      subresource: status
+      time: 2023-07-19T15:18:03Z
+  resourceVersion: "11236029"
+  uid: e73c6013-f61d-4f88-bfcb-c972c7a10fda
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argo-workflows-server
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argo-workflows-server
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                      - events
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods/logs
+                    verbs:
+                      - get
+                      - list
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+                      - update
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - create
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - serviceaccounts
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - watch
+                      - create
+                      - patch
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - eventsources
+                      - sensors
+                      - workflows
+                      - workfloweventbindings
+                      - workflowtemplates
+                      - cronworkflows
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argo-workflows-workflow-controller
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argo-workflows-workflow-controller
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods/exec
+                    verbs:
+                      - create
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                    verbs:
+                      - get
+                      - watch
+                      - list
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - persistentvolumeclaims
+                      - persistentvolumeclaims/finalizers
+                    verbs:
+                      - create
+                      - update
+                      - delete
+                      - get
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - workflows
+                      - workflows/finalizers
+                      - workflowtasksets
+                      - workflowtasksets/finalizers
+                      - workflowartifactgctasks
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                      - create
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - workflowtemplates
+                      - workflowtemplates/finalizers
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - workflowtaskresults
+                      - workflowtaskresults/finalizers
+                    verbs:
+                      - list
+                      - watch
+                      - deletecollection
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - cronworkflows
+                      - cronworkflows/finalizers
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - create
+                      - patch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - serviceaccounts
+                    verbs:
+                      - get
+                      - list
+                  - apiGroups:
+                      - policy
+                    resources:
+                      - poddisruptionbudgets
+                    verbs:
+                      - create
+                      - get
+                      - delete
+                  - apiGroups:
+                      - coordination.k8s.io
+                    resources:
+                      - leases
+                    verbs:
+                      - get
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+status:
+  compliant: Compliant
+  placement:
+    - placement: argo-workflows-placement
+      placementBinding: argo-workflows-placement
+  status:
+    - clustername: local-cluster
+      clusternamespace: local-cluster
+      compliant: Compliant
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: argo-workflows-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-19T15:13:53Z
+  generation: 1
+  resourceVersion: "11231342"
+  uid: 87afa8c7-f7f4-495a-896e-da6f3b9ac578
+spec:
+  clusterSets:
+    - si-cluster
+status:
+  conditions:
+    - lastTransitionTime: 2023-07-19T15:13:53Z
+      message: Placement configurations check pass
+      reason: Succeedconfigured
+      status: "False"
+      type: PlacementMisconfigured
+    - lastTransitionTime: 2023-07-19T15:13:53Z
+      message: All cluster decisions scheduled
+      reason: AllDecisionsScheduled
+      status: "True"
+      type: PlacementSatisfied
+  numberOfSelectedClusters: 1
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: argo-workflows-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-19T15:13:53Z
+  generation: 1
+  resourceVersion: "11231338"
+  uid: 58cbd6ac-8c06-4f85-bd64-9977f5e1e7d4
+placementRef:
+  name: argo-workflows-placement
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: argo-workflows
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy
+
