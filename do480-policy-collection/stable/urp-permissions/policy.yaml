@@ -4,9 +4,14 @@ metadata:
   name: urp-permissions
   namespace: si-policies
   annotations:
-    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/categories: AC Access Control, CM Configuration Management
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement, CM-2 Baseline Configuration
     policy.open-cluster-management.io/standards: NIST SP 800-53
-    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+  creationTimestamp: 2023-07-19T09:24:23Z
+  generation: 8
+  managedFields:
+  resourceVersion: "10923368"
+  uid: 62997118-1c41-4c34-bb09-007f9d082326
 spec:
   disabled: false
   policy-templates:
@@ -16,8 +21,6 @@ spec:
         metadata:
           name: argocd-application-controller
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
             exclude:
               - kube-*
@@ -39,17 +42,16 @@ spec:
                     verbs:
                       - "*"
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: argocd-dex-server
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
-            exclude:
-              - kube-*
+            exclude: []
             include:
               - openshift-gitops
           object-templates:
@@ -70,18 +72,16 @@ spec:
                       - list
                       - watch
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: redis
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
-            exclude:
-              - kube-*
-              - openshift-*
+            exclude: []
             include:
               - openshift-gitops
           object-templates:
@@ -103,14 +103,14 @@ spec:
                       - delete
                       - patch
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: argocd-server
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
             exclude:
               - kube-*
@@ -156,14 +156,14 @@ spec:
                       - update
                       - watch
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: argocd-repo-server
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
             exclude:
               - kube-*
@@ -185,18 +185,16 @@ spec:
                     verbs:
                       - "*"
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: argocd-applicationset-controller
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
-            exclude:
-              - kube-*
-              - openshift-*
+            exclude: []
             include:
               - openshift-gitops
           object-templates:
@@ -257,18 +255,16 @@ spec:
                       - list
                       - watch
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
           name: argocd-notifications-controller
         spec:
-          remediationAction: enforce
-          severity: high
           namespaceSelector:
-            exclude:
-              - kube-*
-              - openshift-*
+            exclude: []
             include:
               - openshift-gitops
           object-templates:
@@ -311,21 +307,78 @@ spec:
                     verbs:
                       - get
           pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: openshift-gitops-ns
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - default
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: openshift-gitops
+          pruneObjectBehavior: None
+          remediationAction: enforce
+          severity: low
+status:
+  compliant: Compliant
+  placement:
+    - placement: urp-permissions-placement
+      placementBinding: urp-permissions-placement
+  status:
+    - clustername: local-cluster
+      clusternamespace: local-cluster
+      compliant: Compliant
+    - clustername: single-node-2
+      clusternamespace: single-node-2
+      compliant: Compliant
 ---
 apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: urp-permissions-placement
   namespace: si-policies
+  creationTimestamp: 2023-07-19T09:24:23Z
+  generation: 1
+  resourceVersion: "10896217"
+  uid: 1ee38afb-3160-410c-86c3-6df443fb6bde
 spec:
   clusterSets:
     - si-cluster
+status:
+  conditions:
+    - lastTransitionTime: 2023-07-19T09:24:23Z
+      message: Placement configurations check pass
+      reason: Succeedconfigured
+      status: "False"
+      type: PlacementMisconfigured
+    - lastTransitionTime: 2023-07-19T09:24:23Z
+      message: All cluster decisions scheduled
+      reason: AllDecisionsScheduled
+      status: "True"
+      type: PlacementSatisfied
+  numberOfSelectedClusters: 2
 ---
 apiVersion: policy.open-cluster-management.io/v1
 kind: PlacementBinding
 metadata:
   name: urp-permissions-placement
   namespace: si-policies
+  creationTimestamp: 2023-07-19T09:24:23Z
+  generation: 1
+  resourceVersion: "10896210"
+  uid: 83da2132-8cd2-4295-a0c0-da6ee9cc1f68
 placementRef:
   name: urp-permissions-placement
   apiGroup: cluster.open-cluster-management.io
