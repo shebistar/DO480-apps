@@ -1,0 +1,337 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: urp-permissions
+  namespace: si-policies
+  annotations:
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-application-controller
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-application-controller
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - "*"
+                    verbs:
+                      - "*"
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-dex-server
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+            include:
+              - openshift-gitops
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-dex-server
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                      - configmaps
+                    verbs:
+                      - get
+                      - list
+                      - watch
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: redis
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - openshift-gitops
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: redis
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - "*"
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - delete
+                      - patch
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-server
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-server
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - "*"
+                    verbs:
+                      - get
+                      - delete
+                      - patch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - list
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                      - pods/log
+                    verbs:
+                      - get
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - applications
+                    verbs:
+                      - get
+                      - list
+                      - update
+                      - watch
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-repo-server
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-repo-server
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - "*"
+                    verbs:
+                      - "*"
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-applicationset-controller
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - openshift-gitops
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-applicationset-controller
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - applications
+                      - applicationssets
+                      - applicationsets/finalizers
+                    verbs:
+                      - create
+                      - delete
+                      - get
+                      - list
+                      - patch
+                      - update
+                      - watch
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - appprojects
+                    verbs:
+                      - get
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                    verbs:
+                      - create
+                      - update
+                      - delete
+                      - get
+                      - list
+                      - patch
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - apps
+                      - extensions
+                    resources:
+                      - deployments
+                    verbs:
+                      - get
+                      - list
+                      - watch
+          pruneObjectBehavior: DeleteAll
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-notifications-controller
+        spec:
+          remediationAction: enforce
+          severity: high
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - openshift-gitops
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argocd-notifications-controller
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - applications
+                      - appprojects
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - confirmaps
+                      - secrets
+                    verbs:
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                    verbs:
+                      - get
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+          pruneObjectBehavior: DeleteAll
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: urp-permissions-placement
+  namespace: si-policies
+spec:
+  clusterSets:
+    - si-cluster
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: urp-permissions-placement
+  namespace: si-policies
+placementRef:
+  name: urp-permissions-placement
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: urp-permissions
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy
+
