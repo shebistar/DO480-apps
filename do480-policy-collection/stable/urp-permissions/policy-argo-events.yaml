@@ -158,3 +158,25 @@ spec:
           pruneObjectBehavior: DeleteAll
           remediationAction: enforce
           severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: si-policies
+        spec:
+          remediationAction: inform
+          severity: low
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                kind: Namespace
+                apiVersion: v1
+                metadata:
+                  name: si-policies
+          pruneObjectBehavior: DeleteAll
