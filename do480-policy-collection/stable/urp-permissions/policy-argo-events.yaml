@@ -1,0 +1,160 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: argo-events
+  namespace: si-policies
+  annotations:
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  creationTimestamp: 2023-07-20T11:56:23Z
+  generation: 2
+  managedFields:
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:policy.open-cluster-management.io/categories: {}
+            f:policy.open-cluster-management.io/controls: {}
+            f:policy.open-cluster-management.io/standards: {}
+        f:spec:
+          .: {}
+          f:disabled: {}
+          f:policy-templates: {}
+      manager: unknown
+      operation: Update
+      time: 2023-07-20T11:57:44Z
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:compliant: {}
+          f:placement: {}
+          f:status: {}
+      manager: governance-policy-propagator
+      operation: Update
+      subresource: status
+      time: 2023-07-20T11:57:58Z
+  resourceVersion: "12463387"
+  uid: a4ea390d-a651-4ce0-ac43-9856ff934da4
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argo-events-controller-manager
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: argo-events-controller-manager
+                rules:
+                  - apiGroups:
+                      - apps
+                    resources:
+                      - deployments/finalizers
+                    verbs:
+                      - update
+                  - apiGroups:
+                      - rbac.authorization.k8s.io
+                    resources:
+                      - clusterroles/finalizers
+                    verbs:
+                      - update
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - create
+                      - patch
+                  - apiGroups:
+                      - coordination.k8s.io
+                    resources:
+                      - leases
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - create
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - sensors
+                      - sensors/finalizers
+                      - sensors/status
+                      - eventsources
+                      - eventsources/finalizers
+                      - eventsources/finalizers
+                      - eventbus
+                      - eventbus/finalizers
+                      - eventbus/status
+                    verbs:
+                      - create
+                      - delete
+                      - deletecollection
+                      - get
+                      - list
+                      - patch
+                      - update
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                      - pods/exec
+                      - configmaps
+                      - services
+                      - persistentvolumeclaims
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - apps
+                    resources:
+                      - deployments
+                      - statefulsets
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
