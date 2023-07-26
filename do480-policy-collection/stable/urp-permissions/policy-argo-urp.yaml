@@ -4,9 +4,42 @@ metadata:
   name: argocd-urp
   namespace: si-policies
   annotations:
-    policy.open-cluster-management.io/categories: ""
-    policy.open-cluster-management.io/controls: ""
-    policy.open-cluster-management.io/standards: ""
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  creationTimestamp: 2023-07-20T14:26:48Z
+  generation: 4
+  managedFields:
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:policy.open-cluster-management.io/categories: {}
+            f:policy.open-cluster-management.io/controls: {}
+            f:policy.open-cluster-management.io/standards: {}
+        f:spec:
+          .: {}
+          f:disabled: {}
+          f:policy-templates: {}
+      manager: unknown
+      operation: Update
+      time: 2023-07-26T12:31:17Z
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:compliant: {}
+          f:placement: {}
+          f:status: {}
+      manager: governance-policy-propagator
+      operation: Update
+      subresource: status
+      time: 2023-07-26T12:31:21Z
+  resourceVersion: "21763309"
+  uid: 56f2dd4d-d3c0-416a-b128-9220bfc951b8
 spec:
   disabled: false
   policy-templates:
@@ -289,8 +322,494 @@ spec:
           pruneObjectBehavior: None
           remediationAction: enforce
           severity: low
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-application-controller-clusterrolebinding
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: RoleBinding
+                metadata:
+                  name: argocd-application-controller
+                roleRef:
+                  name: operator
+                  apiGroup: rbac.authorization.k8s.io
+                  kind: Role
+                subjects:
+                  - name: admin
+                    apiGroup: rbac.authorization.k8s.io
+                    kind: User
+          pruneObjectBehavior: DeleteIfCreated
+          remediationAction: inform
+          severity: high
 status:
-  compliant: Compliant
+  compliant: NonCompliant
   placement:
     - placement: argocd-urp-placement
       placementBinding: argocd-urp-placement
+  status:
+    - clustername: local-cluster
+      clusternamespace: local-cluster
+      compliant: NonCompliant
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: argocd-urp-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-20T14:26:49Z
+  generation: 1
+  resourceVersion: "21756510"
+  uid: 8628e297-5d43-4717-83e4-295e1c4b7523
+spec:
+  clusterSets:
+    - si-cluster
+status:
+  conditions:
+    - lastTransitionTime: 2023-07-20T14:26:49Z
+      message: Placement configurations check pass
+      reason: Succeedconfigured
+      status: "False"
+      type: PlacementMisconfigured
+    - lastTransitionTime: 2023-07-26T12:28:06Z
+      message: All cluster decisions scheduled
+      reason: AllDecisionsScheduled
+      status: "True"
+      type: PlacementSatisfied
+  numberOfSelectedClusters: 1
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: argocd-urp-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-20T14:26:50Z
+  generation: 1
+  resourceVersion: "12620571"
+  uid: 196a94a3-86f7-4e2a-a1b8-3cb205828910
+placementRef:
+  name: argocd-urp-placement
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: argocd-urp
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: argocd-urp
+  namespace: si-policies
+  annotations:
+    policy.open-cluster-management.io/categories: AC Access Control
+    policy.open-cluster-management.io/controls: AC-3 Access Enforcement
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+  creationTimestamp: 2023-07-20T14:26:48Z
+  generation: 4
+  managedFields:
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:policy.open-cluster-management.io/categories: {}
+            f:policy.open-cluster-management.io/controls: {}
+            f:policy.open-cluster-management.io/standards: {}
+        f:spec:
+          .: {}
+          f:disabled: {}
+          f:policy-templates: {}
+      manager: unknown
+      operation: Update
+      time: 2023-07-26T12:31:17Z
+    - apiVersion: policy.open-cluster-management.io/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:compliant: {}
+          f:placement: {}
+          f:status: {}
+      manager: governance-policy-propagator
+      operation: Update
+      subresource: status
+      time: 2023-07-26T12:31:21Z
+  resourceVersion: "21763309"
+  uid: 56f2dd4d-d3c0-416a-b128-9220bfc951b8
+spec:
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: awf-admin-sa
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: awf-admin-sa
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - eventsources
+                      - sensors
+                      - workflows
+                      - workfloweventbindings
+                      - workflowtemplates
+                      - cronworkflows
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - delete
+                      - patch
+                      - update
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - create
+                      - watch
+                      - patch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - serviceaccounts
+                    verbs:
+                      - get
+                      - list
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - secrets
+                    verbs:
+                      - create
+                      - get
+                  - apiGroups:
+                      - apigroups
+                    resources:
+                      - secrets
+                    verbs:
+                      - get
+                      - update
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                      - pods/log
+                      - pods/exec
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                      - events
+                    verbs:
+                      - get
+                      - list
+                      - watch
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: awf-default-sa
+        spec:
+          namespaceSelector:
+            exclude: []
+            include:
+              - argo
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: awf-default-sa
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - eventsources
+                      - sensors
+                      - workflows
+                      - workfloweventbindings
+                      - workflowtemplates
+                      - cronworkflows
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - events
+                    verbs:
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                      - pods/log
+                      - pods/exec
+                    verbs:
+                      - get
+                      - list
+                      - watch
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - configmaps
+                      - events
+                    verbs:
+                      - get
+                      - list
+                      - watch
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: eventsource-urp
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: eventsource-urp
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - namespaces
+                    verbs:
+                      - get
+                      - list
+                      - patch
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: userresources-cluster
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: userresources-cluster
+                rules:
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - namespaces
+                    verbs:
+                      - get
+                      - list
+                      - patch
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: userresources-argo
+        spec:
+          namespaceSelector:
+            exclude: []
+            include:
+              - argo
+          object-templates:
+            - complianceType: mustonlyhave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: Role
+                metadata:
+                  name: userresources-argo
+                rules:
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - applications
+                      - appprojects
+                    verbs:
+                      - create
+                      - get
+                      - list
+                      - watch
+                      - update
+                      - patch
+                      - delete
+                  - apiGroups:
+                      - "*"
+                    resources:
+                      - pods
+                    verbs:
+                      - get
+                      - patch
+                  - apiGroups:
+                      - argoproj.io
+                    resources:
+                      - workflowtaskresults
+                    verbs:
+                      - create
+                      - patch
+          pruneObjectBehavior: DeleteAll
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argo-namespace
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: Namespace
+                metadata:
+                  name: argo
+          pruneObjectBehavior: None
+          remediationAction: enforce
+          severity: low
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: argocd-application-controller-clusterrolebinding
+        spec:
+          namespaceSelector:
+            exclude:
+              - kube-*
+              - openshift-*
+            include:
+              - "*"
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: rbac.authorization.k8s.io/v1
+                kind: RoleBinding
+                metadata:
+                  name: argocd-application-controller
+                roleRef:
+                  name: operator
+                  apiGroup: rbac.authorization.k8s.io
+                  kind: Role
+                subjects:
+                  - name: admin
+                    apiGroup: rbac.authorization.k8s.io
+                    kind: User
+          pruneObjectBehavior: DeleteIfCreated
+          remediationAction: inform
+          severity: high
+status:
+  compliant: NonCompliant
+  placement:
+    - placement: argocd-urp-placement
+      placementBinding: argocd-urp-placement
+  status:
+    - clustername: local-cluster
+      clusternamespace: local-cluster
+      compliant: NonCompliant
+---
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: argocd-urp-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-20T14:26:49Z
+  generation: 1
+  resourceVersion: "21756510"
+  uid: 8628e297-5d43-4717-83e4-295e1c4b7523
+spec:
+  clusterSets:
+    - si-cluster
+status:
+  conditions:
+    - lastTransitionTime: 2023-07-20T14:26:49Z
+      message: Placement configurations check pass
+      reason: Succeedconfigured
+      status: "False"
+      type: PlacementMisconfigured
+    - lastTransitionTime: 2023-07-26T12:28:06Z
+      message: All cluster decisions scheduled
+      reason: AllDecisionsScheduled
+      status: "True"
+      type: PlacementSatisfied
+  numberOfSelectedClusters: 1
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: argocd-urp-placement
+  namespace: si-policies
+  creationTimestamp: 2023-07-20T14:26:50Z
+  generation: 1
+  resourceVersion: "12620571"
+  uid: 196a94a3-86f7-4e2a-a1b8-3cb205828910
+placementRef:
+  name: argocd-urp-placement
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+subjects:
+  - name: argocd-urp
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy
+
