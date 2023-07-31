@@ -1,0 +1,37 @@
+- hosts: localhost
+  module_defaults:
+    group/community.okd.okd:
+      host: https://api.ocp4.shebi.eu:6443
+      #insecure_skip_tls_verify: true
+
+#      ca_cert: ca.pem
+  tasks:
+  - block:
+    # It's good practice to store login credentials in a secure vault and not
+    # directly in playbooks.
+    - include_vars: openshift_passwords.yml
+
+    - name: Log in (obtain access token)
+      community.okd.openshift_auth:
+        username: kubeadmin
+        password: vJyJI-St9TV-UdToK-mbcbd
+        #insecure_skip_tls_verify: true
+
+      register: openshift_auth_results
+
+    # Previous task provides the token/api_key, while all other parameters
+    # are taken from module_defaults
+    - name: Get a list of all pods from any namespace
+      kubernetes.core.k8s_info:
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        kind: Pod
+      register: pod_list
+
+    always:
+    - name: If login succeeded, try to log out (revoke access token)
+      when: openshift_auth_results.openshift_auth.api_key is defined
+      community.okd.openshift_auth:
+        state: absent
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+
+
