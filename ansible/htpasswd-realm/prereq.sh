@@ -1,3 +1,4 @@
+# login using oc-login to the desired cluster
 ansible-galaxy collection install community.okd
 ansible-galaxy collection install community.general
 ansible-galaxy collection install kubernetes.core
