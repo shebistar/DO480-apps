@@ -1,0 +1,7 @@
+# vars.yml
+---
+cluster_name: cl-103
+workspace: dev
+kubeadmin_password_file: "/mnt/data/workspaces/workspace_clusters/{{ workspace }}/{{ cluster_name }}/auth/kubeadmin-password"
+localadmin_password_file: "/mnt/data/workspaces/workspace_clusters/{{ workspace }}/{{ cluster_name }}/auth/localadmin-password"
+serviceaccount_password_file: "/mnt/data/workspaces/workspace_clusters/{{ workspace }}/{{ cluster_name }}/auth/serviceaccount-token"
