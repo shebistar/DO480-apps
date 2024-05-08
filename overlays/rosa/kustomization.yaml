@@ -4,6 +4,6 @@ bases:
   - ../../base
 
 resources:
-- dbclaim-pvc.yaml
 - route.yaml
+- dbclaim-pvc.yaml
 namePrefix: rosa-
