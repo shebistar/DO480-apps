@@ -6,10 +6,10 @@ metadata:
     name: frontend
   name: frontend
 spec:
-  host: todo.apps.ocp4.example.com
+  host: todo.apps.shebi.northeurope.aroapp.io
   path: "/todo"
   to:
     kind: Service
-    name: dev-frontend
+    name: aro-frontend
     weight: 100
   wildcardPolicy: None

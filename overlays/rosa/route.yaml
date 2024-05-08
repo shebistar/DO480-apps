@@ -6,10 +6,10 @@ metadata:
     name: frontend
   name: frontend
 spec:
-  host: todo.apps.ocp4.example.com
+  host: todo.apps.shebi-rosa.esjn.p1.openshiftapps.com
   path: "/todo"
   to:
     kind: Service
-    name: dev-frontend
+    name: rosa-frontend
     weight: 100
   wildcardPolicy: None
